@@ -27,5 +27,8 @@ new_sqlite_classes = ["LLMProxyStorage"]
 [env.production]
 vars = { ENVIRONMENT = "production" }
 
+[build]
+upload = { format = "modules", rules = [{ type = "Text", globs = ["**/*.html"] }] }
+
 [dev]
 port = 8787

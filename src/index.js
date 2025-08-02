@@ -4,6 +4,8 @@
 
 // Import the Durable Object class
 import { LLMProxyStorage } from './storage.js';
+// Import the admin HTML content as a raw string (bundler will inline it)
+import adminHtml from './admin.html';
 
 // Export the Durable Object class
 export { LLMProxyStorage };
@@ -135,34 +137,8 @@ export default {
   
   // Get admin HTML content
   async getAdminHtml(env) {
-    try {
-      // Use the environment variable to locate the admin.html file
-      const adminHtmlPath = 'src/admin.html';
-
-      // Read the admin.html file content directly
-      const fs = require('fs');
-      const html = fs.readFileSync(adminHtmlPath, 'utf-8');
-      return html;
-    } catch (error) {
-      console.error('Error reading admin.html:', error);
-
-      // Fallback: Return a simple admin interface if we can't load the file
-      return `<!DOCTYPE html>
-<html>
-<head>
-    <title>LLM API Proxy Admin</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-    <div id="app">
-        <h1>LLM API Proxy Admin</h1>
-        <p>Admin interface is available but the admin.html file could not be loaded.</p>
-        <p>Please check the worker configuration or serve the admin interface from a CDN.</p>
-    </div>
-</body>
-</html>`;
-    }
+    // Directly return the inlined admin HTML content bundled at build time
+    return adminHtml;
   },
   
   // Handle admin API requests
