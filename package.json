@@ -1,0 +1,22 @@
+{
+  "name": "llm-proxy-api",
+  "version": "1.0.0",
+  "description": "A Cloudflare Worker proxy for LLM APIs following OpenAI's API specification",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "llm",
+    "proxy",
+    "openai"
+  ],
+  "author": "LLM Proxy API",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

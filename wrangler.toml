@@ -1,0 +1,31 @@
+name = "llm-proxy-api"
+main = "src/index.js"
+compatibility_date = "2023-12-01"
+
+[vars]
+# Target API endpoint (can be overridden in Cloudflare dashboard)
+TARGET_API_URL = "https://api.openai.com"
+
+# Enable debug logging
+DEBUG = false
+
+# Admin password for accessing the management interface
+ADMIN_PASSWORD = "change-this-password"
+
+# Environment (development or production)
+ENVIRONMENT = "development"
+
+[durable_objects]
+bindings = [
+  { name = "LLM_PROXY_STORAGE", class_name = "LLMProxyStorage" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["LLMProxyStorage"]
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[dev]
+port = 8787

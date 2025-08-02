@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM API Proxy 管理后台</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #f3f4f6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --dark-color: #1f2937;
+            --light-color: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--light-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        h1, h2, h3 {
+            color: var(--dark-color);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background-color: var(--light-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #4338ca;
+        }
+        
+        button.secondary {
+            background-color: #6b7280;
+        }
+        
+        button.secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        button.success {
+            background-color: var(--success-color);
+        }
+        
+        button.success:hover {
+            background-color: #059669;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background-color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-card {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--light-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .login-form {
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+        
+        .auth-required {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .security-note {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .stats-card {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>LLM API Proxy 管理后台</h1>
+            <p class="subtitle">管理和监控您的LLM API代理服务</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- 登录表单 -->
+        <div id="login-section" class="card login-form">
+            <h2>管理员登录</h2>
+            <div class="security-note">
+                <strong>安全提示：</strong>请确保您正在使用安全的网络连接，并定期更换管理员密码。
+            </div>
+            <div id="login-alert" class="alert hidden"></div>
+            <div class="form-group">
+                <label for="admin-password">管理员密码</label>
+                <input type="password" id="admin-password" placeholder="请输入管理员密码">
+            </div>
+            <button id="login-btn">登录</button>
+        </div>
+        
+        <!-- 主要内容区域 -->
+        <div id="main-content" class="hidden">
+            <div class="stats-card">
+                <div class="stat-item">
+                    <div class="stat-value" id="total-requests">0</div>
+                    <div class="stat-label">总请求数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="success-rate">0%</div>
+                    <div class="stat-label">成功率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avg-response-time">0ms</div>
+                    <div class="stat-label">平均响应时间</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="current-target">-</div>
+                    <div class="stat-label">当前目标API</div>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="config">配置管理</div>
+                <div class="tab" data-tab="logs">转发记录</div>
+                <div class="tab" data-tab="security">安全设置</div>
+            </div>
+            
+            <div id="config-tab" class="tab-content active">
+                <div class="card">
+                    <h2>API配置</h2>
+                    <div id="config-alert" class="alert hidden"></div>
+                    <div class="form-group">
+                        <label for="target-api-url">目标API地址</label>
+                        <input type="text" id="target-api-url" placeholder="https://api.openai.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-admin-password">新管理员密码（留空则不修改）</label>
+                        <input type="password" id="new-admin-password" placeholder="用于访问管理后台">
+                    </div>
+                    <div class="btn-group">
+                        <button id="save-config">保存配置</button>
+                        <button class="secondary" id="test-connection">测试连接</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="logs-tab" class="tab-content">
+                <div class="card">
+                    <h2>转发记录</h2>
+                    <div class="form-group">
+                        <label for="log-limit">显示记录数</label>
+                        <select id="log-limit">
+                            <option value="10">最近10条</option>
+                            <option value="50" selected>最近50条</option>
+                            <option value="100">最近100条</option>
+                        </select>
+                    </div>
+                    <table id="logs-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>端点</th>
+                                <th>目标API</th>
+                                <th>状态</th>
+                                <th>耗时</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 日志记录将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
+                    <div class="btn-group">
+                        <button id="refresh-logs">刷新记录</button>
+                        <button class="secondary" id="clear-logs">清空记录</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="security-tab" class="tab-content">
+                <div class="card">
+                    <h2>安全设置</h2>
+                    <div id="security-alert" class="alert hidden"></div>
+                    <div class="security-note">
+                        <strong>安全建议：</strong>定期更换管理员密码，使用强密码，并确保通过HTTPS访问管理后台。
+                    </div>
+                    <div class="form-group">
+                        <label for="current-password">当前密码（修改安全设置时需要验证）</label>
+                        <input type="password" id="current-password" placeholder="请输入当前管理员密码">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">新密码</label>
+                        <input type="password" id="new-password" placeholder="请输入新密码">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">确认新密码</label>
+                        <input type="password" id="confirm-password" placeholder="请再次输入新密码">
+                    </div>
+                    <button id="change-password">修改密码</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>LLM API Proxy &copy; 2025 - Cloudflare Worker 部署</p>
+        </div>
+    </footer>
+    
+    <script>
+        // 全局变量
+        const API_BASE = '/admin';
+        let authToken = localStorage.getItem('admin-token') || null;
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否已登录
+            if (authToken) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                initMainApp();
+            }
+            
+            // 绑定登录事件
+            document.getElementById('login-btn').addEventListener('click', login);
+        });
+        
+        // 初始化主应用
+        function initMainApp() {
+            // 初始化标签页
+            initTabs();
+            
+            // 加载配置
+            loadConfig();
+            
+            // 加载统计信息
+            loadStats();
+            
+            // 加载日志记录
+            loadLogs();
+            
+            // 绑定事件监听器
+            bindEventListeners();
+        }
+        
+        // 登录功能
+        async function login() {
+            const password = document.getElementById('admin-password').value;
+            
+            if (!password) {
+                showLoginAlert('请输入管理员密码', 'error');
+                return;
+            }
+            
+            try {
+                // 尝试登录
+                const response = await fetch(`${API_BASE}/config`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${password}`
+                    }
+                });
+                
+                if (response.ok) {
+                    // 登录成功
+                    authToken = password;
+                    localStorage.setItem('admin-token', authToken);
+                    
+                    // 显示主界面
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    
+                    // 初始化主应用
+                    initMainApp();
+                } else {
+                    showLoginAlert('密码错误，请重试', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showLoginAlert('登录时发生错误', 'error');
+            }
+        }
+        
+        // 退出登录
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('admin-token');
+            
+            // 显示登录界面
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('main-content').classList.add('hidden');
+            
+            // 清空表单
+            document.getElementById('admin-password').value = '';
+        }
+        
+        // 初始化标签页
+        function initTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有标签页的激活状态
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // 激活当前标签页
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+        
+        // 绑定事件监听器
+        function bindEventListeners() {
+            // 保存配置按钮
+            document.getElementById('save-config').addEventListener('click', saveConfig);
+            
+            // 测试连接按钮
+            document.getElementById('test-connection').addEventListener('click', testConnection);
+            
+            // 刷新日志按钮
+            document.getElementById('refresh-logs').addEventListener('click', loadLogs);
+            
+            // 清空日志按钮
+            document.getElementById('clear-logs').addEventListener('click', clearLogs);
+            
+            // 日志数量选择器
+            document.getElementById('log-limit').addEventListener('change', loadLogs);
+            
+            // 修改密码按钮
+            document.getElementById('change-password').addEventListener('click', changePassword);
+        }
+        
+        // 显示登录提示信息
+        function showLoginAlert(message, type = 'success') {
+            const alert = document.getElementById('login-alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.classList.remove('hidden');
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                alert.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 显示配置提示信息
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('config-alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.classList.remove('hidden');
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                alert.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 显示安全提示信息
+        function showSecurityAlert(message, type = 'success') {
+            const alert = document.getElementById('security-alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.classList.remove('hidden');
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                alert.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 获取认证头
+        function getAuthHeader() {
+            return {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            };
+        }
+        
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/config`, {
+                    method: 'GET',
+                    headers: getAuthHeader()
+                });
+                
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('target-api-url').value = config.targetApiUrl || '';
+                } else if (response.status === 401) {
+                    // 认证失败，退出登录
+                    logout();
+                } else {
+                    console.error('Failed to load config');
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+        
+        // 保存配置
+        async function saveConfig() {
+            const targetApiUrl = document.getElementById('target-api-url').value.trim();
+            const newAdminPassword = document.getElementById('new-admin-password').value;
+            
+            if (!targetApiUrl) {
+                showAlert('请填写目标API地址', 'error');
+                return;
+            }
+            
+            try {
+                const payload = { targetApiUrl };
+                if (newAdminPassword) {
+                    payload.adminPassword = newAdminPassword;
+                }
+                
+                const response = await fetch(`${API_BASE}/config`, {
+                    method: 'POST',
+                    headers: getAuthHeader(),
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    showAlert('配置保存成功');
+                    loadStats(); // 重新加载统计信息
+                    
+                    // 如果修改了密码，需要重新登录
+                    if (newAdminPassword) {
+                        showAlert('密码已更新，请重新登录');
+                        setTimeout(logout, 2000);
+                    }
+                } else if (response.status === 401) {
+                    // 认证失败，退出登录
+                    logout();
+                } else {
+                    const error = await response.json();
+                    showAlert(`保存失败: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error saving config:', error);
+                showAlert('保存配置时发生错误', 'error');
+            }
+        }
+        
+        // 测试连接
+        async function testConnection() {
+            const targetApiUrl = document.getElementById('target-api-url').value.trim();
+            
+            if (!targetApiUrl) {
+                showAlert('请先填写目标API地址', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/test-connection`, {
+                    method: 'POST',
+                    headers: getAuthHeader(),
+                    body: JSON.stringify({ targetApiUrl })
+                });
+                
+                if (response.ok) {
+                    showAlert('连接测试成功');
+                } else if (response.status === 401) {
+                    // 认证失败，退出登录
+                    logout();
+                } else {
+                    const error = await response.json();
+                    showAlert(`连接测试失败: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error testing connection:', error);
+                showAlert('连接测试时发生错误', 'error');
+            }
+        }
+        
+        // 加载统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`, {
+                    method: 'GET',
+                    headers: getAuthHeader()
+                });
+                
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('total-requests').textContent = stats.totalRequests || 0;
+                    document.getElementById('success-rate').textContent = `${stats.successRate || 0}%`;
+                    document.getElementById('avg-response-time').textContent = `${stats.avgResponseTime || 0}ms`;
+                    document.getElementById('current-target').textContent = stats.currentTarget || '-';
+                } else if (response.status === 401) {
+                    // 认证失败，退出登录
+                    logout();
+                } else {
+                    console.error('Failed to load stats');
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // 加载日志记录
+        async function loadLogs() {
+            const limit = document.getElementById('log-limit').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/logs?limit=${limit}`, {
+                    method: 'GET',
+                    headers: getAuthHeader()
+                });
+                
+                if (response.ok) {
+                    const logs = await response.json();
+                    renderLogs(logs);
+                } else if (response.status === 401) {
+                    // 认证失败，退出登录
+                    logout();
+                } else {
+                    console.error('Failed to load logs');
+                }
+            } catch (error) {
+                console.error('Error loading logs:', error);
+            }
+        }
+        
+        // 渲染日志记录
+        function renderLogs(logs) {
+            const tbody = document.querySelector('#logs-table tbody');
+            tbody.innerHTML = '';
+            
+            if (!logs || logs.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="6" style="text-align: center;">暂无记录</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+            
+            logs.forEach(log => {
+                const tr = document.createElement('tr');
+                const timestamp = new Date(log.timestamp).toLocaleString('zh-CN');
+                const statusClass = log.status >= 200 && log.status < 300 ? 'status-success' : 
+                                  log.status >= 400 ? 'status-error' : 'status-pending';
+                
+                tr.innerHTML = `
+                    <td>${timestamp}</td>
+                    <td>${log.endpoint}</td>
+                    <td>${log.targetApi || '-'}</td>
+                    <td><span class="status-badge ${statusClass}">${log.status}</span></td>
+                    <td>${log.duration}ms</td>
+                    <td>
+                        <button class="secondary" onclick="viewLogDetails('${log.id}')">详情</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // 查看日志详情
+        function viewLogDetails(logId) {
+            // 这里可以实现查看日志详情的功能
+            alert(`查看日志详情: ${logId}`);
+        }
+        
+        // 清空日志
+        async function clearLogs() {
+            if (!confirm('确定要清空所有日志记录吗？此操作不可恢复。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/logs`, {
+                    method: 'DELETE',
+                    headers: getAuthHeader()
+                });
+                
+                if (response.ok) {
+                    showAlert('日志记录已清空');
+                    loadLogs(); // 重新加载日志
+                } else if (response.status === 401) {
+                    // 认证失败，退出登录
+                    logout();
+                } else {
+                    const error = await response.json();
+                    showAlert(`清空失败: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error clearing logs:', error);
+                showAlert('清空日志时发生错误', 'error');
+            }
+        }
+        
+        // 修改密码
+        async function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // 验证输入
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showSecurityAlert('请填写所有密码字段', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showSecurityAlert('新密码和确认密码不匹配', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                showSecurityAlert('密码长度至少为8位', 'error');
+                return;
+            }
+            
+            // 验证当前密码
+            if (currentPassword !== authToken) {
+                showSecurityAlert('当前密码错误', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/config`, {
+                    method: 'POST',
+                    headers: getAuthHeader(),
+                    body: JSON.stringify({ adminPassword: newPassword })
+                });
+                
+                if (response.ok) {
+                    showSecurityAlert('密码修改成功，请重新登录');
+                    setTimeout(logout, 2000);
+                } else if (response.status === 401) {
+                    // 认证失败，退出登录
+                    logout();
+                } else {
+                    const error = await response.json();
+                    showSecurityAlert(`修改失败: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showSecurityAlert('修改密码时发生错误', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
