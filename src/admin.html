@@ -293,19 +293,6 @@
     </header>
     
     <div class="container">
-        <!-- 登录表单 -->
-        <div id="login-section" class="card login-form">
-            <h2>管理员登录</h2>
-            <div class="security-note">
-                <strong>安全提示：</strong>请确保您正在使用安全的网络连接，并定期更换管理员密码。
-            </div>
-            <div id="login-alert" class="alert hidden"></div>
-            <div class="form-group">
-                <label for="admin-password">管理员密码</label>
-                <input type="password" id="admin-password" placeholder="请输入管理员密码">
-            </div>
-            <button id="login-btn">登录</button>
-        </div>
         
         <!-- 主要内容区域 -->
         <div id="main-content" class="hidden">
@@ -331,7 +318,6 @@
             <div class="tabs">
                 <div class="tab active" data-tab="config">配置管理</div>
                 <div class="tab" data-tab="logs">转发记录</div>
-                <div class="tab" data-tab="security">安全设置</div>
             </div>
             
             <div id="config-tab" class="tab-content active">
@@ -341,10 +327,6 @@
                     <div class="form-group">
                         <label for="target-api-url">目标API地址</label>
                         <input type="text" id="target-api-url" placeholder="https://api.openai.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="new-admin-password">新管理员密码（留空则不修改）</label>
-                        <input type="password" id="new-admin-password" placeholder="用于访问管理后台">
                     </div>
                     <div class="btn-group">
                         <button id="save-config">保存配置</button>
@@ -386,28 +368,6 @@
                 </div>
             </div>
             
-            <div id="security-tab" class="tab-content">
-                <div class="card">
-                    <h2>安全设置</h2>
-                    <div id="security-alert" class="alert hidden"></div>
-                    <div class="security-note">
-                        <strong>安全建议：</strong>定期更换管理员密码，使用强密码，并确保通过HTTPS访问管理后台。
-                    </div>
-                    <div class="form-group">
-                        <label for="current-password">当前密码（修改安全设置时需要验证）</label>
-                        <input type="password" id="current-password" placeholder="请输入当前管理员密码">
-                    </div>
-                    <div class="form-group">
-                        <label for="new-password">新密码</label>
-                        <input type="password" id="new-password" placeholder="请输入新密码">
-                    </div>
-                    <div class="form-group">
-                        <label for="confirm-password">确认新密码</label>
-                        <input type="password" id="confirm-password" placeholder="请再次输入新密码">
-                    </div>
-                    <button id="change-password">修改密码</button>
-                </div>
-            </div>
         </div>
     </div>
     
@@ -420,19 +380,12 @@
     <script>
         // 全局变量
         const API_BASE = '/admin';
-        let authToken = localStorage.getItem('admin-token') || null;
         
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 检查是否已登录
-            if (authToken) {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('main-content').classList.remove('hidden');
-                initMainApp();
-            }
-            
-            // 绑定登录事件
-            document.getElementById('login-btn').addEventListener('click', login);
+            // 直接显示主内容区域
+            document.getElementById('main-content').classList.remove('hidden');
+            initMainApp();
         });
         
         // 初始化主应用
@@ -453,56 +406,6 @@
             bindEventListeners();
         }
         
-        // 登录功能
-        async function login() {
-            const password = document.getElementById('admin-password').value;
-            
-            if (!password) {
-                showLoginAlert('请输入管理员密码', 'error');
-                return;
-            }
-            
-            try {
-                // 尝试登录
-                const response = await fetch(`${API_BASE}/config`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${password}`
-                    }
-                });
-                
-                if (response.ok) {
-                    // 登录成功
-                    authToken = password;
-                    localStorage.setItem('admin-token', authToken);
-                    
-                    // 显示主界面
-                    document.getElementById('login-section').classList.add('hidden');
-                    document.getElementById('main-content').classList.remove('hidden');
-                    
-                    // 初始化主应用
-                    initMainApp();
-                } else {
-                    showLoginAlert('密码错误，请重试', 'error');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                showLoginAlert('登录时发生错误', 'error');
-            }
-        }
-        
-        // 退出登录
-        function logout() {
-            authToken = null;
-            localStorage.removeItem('admin-token');
-            
-            // 显示登录界面
-            document.getElementById('login-section').classList.remove('hidden');
-            document.getElementById('main-content').classList.add('hidden');
-            
-            // 清空表单
-            document.getElementById('admin-password').value = '';
-        }
         
         // 初始化标签页
         function initTabs() {
@@ -538,22 +441,8 @@
             // 日志数量选择器
             document.getElementById('log-limit').addEventListener('change', loadLogs);
             
-            // 修改密码按钮
-            document.getElementById('change-password').addEventListener('click', changePassword);
         }
         
-        // 显示登录提示信息
-        function showLoginAlert(message, type = 'success') {
-            const alert = document.getElementById('login-alert');
-            alert.textContent = message;
-            alert.className = `alert alert-${type}`;
-            alert.classList.remove('hidden');
-            
-            // 3秒后自动隐藏
-            setTimeout(() => {
-                alert.classList.add('hidden');
-            }, 3000);
-        }
         
         // 显示配置提示信息
         function showAlert(message, type = 'success') {
@@ -568,23 +457,10 @@
             }, 3000);
         }
         
-        // 显示安全提示信息
-        function showSecurityAlert(message, type = 'success') {
-            const alert = document.getElementById('security-alert');
-            alert.textContent = message;
-            alert.className = `alert alert-${type}`;
-            alert.classList.remove('hidden');
-            
-            // 3秒后自动隐藏
-            setTimeout(() => {
-                alert.classList.add('hidden');
-            }, 3000);
-        }
         
-        // 获取认证头
-        function getAuthHeader() {
+        // 获取请求头
+        function getHeaders() {
             return {
-                'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
             };
         }
@@ -594,15 +470,12 @@
             try {
                 const response = await fetch(`${API_BASE}/config`, {
                     method: 'GET',
-                    headers: getAuthHeader()
+                    headers: getHeaders()
                 });
                 
                 if (response.ok) {
                     const config = await response.json();
                     document.getElementById('target-api-url').value = config.targetApiUrl || '';
-                } else if (response.status === 401) {
-                    // 认证失败，退出登录
-                    logout();
                 } else {
                     console.error('Failed to load config');
                 }
@@ -614,7 +487,6 @@
         // 保存配置
         async function saveConfig() {
             const targetApiUrl = document.getElementById('target-api-url').value.trim();
-            const newAdminPassword = document.getElementById('new-admin-password').value;
             
             if (!targetApiUrl) {
                 showAlert('请填写目标API地址', 'error');
@@ -623,28 +495,16 @@
             
             try {
                 const payload = { targetApiUrl };
-                if (newAdminPassword) {
-                    payload.adminPassword = newAdminPassword;
-                }
                 
                 const response = await fetch(`${API_BASE}/config`, {
                     method: 'POST',
-                    headers: getAuthHeader(),
+                    headers: getHeaders(),
                     body: JSON.stringify(payload)
                 });
                 
                 if (response.ok) {
                     showAlert('配置保存成功');
                     loadStats(); // 重新加载统计信息
-                    
-                    // 如果修改了密码，需要重新登录
-                    if (newAdminPassword) {
-                        showAlert('密码已更新，请重新登录');
-                        setTimeout(logout, 2000);
-                    }
-                } else if (response.status === 401) {
-                    // 认证失败，退出登录
-                    logout();
                 } else {
                     const error = await response.json();
                     showAlert(`保存失败: ${error.message}`, 'error');
@@ -667,15 +527,12 @@
             try {
                 const response = await fetch(`${API_BASE}/test-connection`, {
                     method: 'POST',
-                    headers: getAuthHeader(),
+                    headers: getHeaders(),
                     body: JSON.stringify({ targetApiUrl })
                 });
                 
                 if (response.ok) {
                     showAlert('连接测试成功');
-                } else if (response.status === 401) {
-                    // 认证失败，退出登录
-                    logout();
                 } else {
                     const error = await response.json();
                     showAlert(`连接测试失败: ${error.message}`, 'error');
@@ -691,7 +548,7 @@
             try {
                 const response = await fetch(`${API_BASE}/stats`, {
                     method: 'GET',
-                    headers: getAuthHeader()
+                    headers: getHeaders()
                 });
                 
                 if (response.ok) {
@@ -700,9 +557,6 @@
                     document.getElementById('success-rate').textContent = `${stats.successRate || 0}%`;
                     document.getElementById('avg-response-time').textContent = `${stats.avgResponseTime || 0}ms`;
                     document.getElementById('current-target').textContent = stats.currentTarget || '-';
-                } else if (response.status === 401) {
-                    // 认证失败，退出登录
-                    logout();
                 } else {
                     console.error('Failed to load stats');
                 }
@@ -718,15 +572,12 @@
             try {
                 const response = await fetch(`${API_BASE}/logs?limit=${limit}`, {
                     method: 'GET',
-                    headers: getAuthHeader()
+                    headers: getHeaders()
                 });
                 
                 if (response.ok) {
                     const logs = await response.json();
                     renderLogs(logs);
-                } else if (response.status === 401) {
-                    // 认证失败，退出登录
-                    logout();
                 } else {
                     console.error('Failed to load logs');
                 }
@@ -782,15 +633,12 @@
             try {
                 const response = await fetch(`${API_BASE}/logs`, {
                     method: 'DELETE',
-                    headers: getAuthHeader()
+                    headers: getHeaders()
                 });
                 
                 if (response.ok) {
                     showAlert('日志记录已清空');
                     loadLogs(); // 重新加载日志
-                } else if (response.status === 401) {
-                    // 认证失败，退出登录
-                    logout();
                 } else {
                     const error = await response.json();
                     showAlert(`清空失败: ${error.message}`, 'error');
@@ -801,56 +649,6 @@
             }
         }
         
-        // 修改密码
-        async function changePassword() {
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            
-            // 验证输入
-            if (!currentPassword || !newPassword || !confirmPassword) {
-                showSecurityAlert('请填写所有密码字段', 'error');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showSecurityAlert('新密码和确认密码不匹配', 'error');
-                return;
-            }
-            
-            if (newPassword.length < 8) {
-                showSecurityAlert('密码长度至少为8位', 'error');
-                return;
-            }
-            
-            // 验证当前密码
-            if (currentPassword !== authToken) {
-                showSecurityAlert('当前密码错误', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE}/config`, {
-                    method: 'POST',
-                    headers: getAuthHeader(),
-                    body: JSON.stringify({ adminPassword: newPassword })
-                });
-                
-                if (response.ok) {
-                    showSecurityAlert('密码修改成功，请重新登录');
-                    setTimeout(logout, 2000);
-                } else if (response.status === 401) {
-                    // 认证失败，退出登录
-                    logout();
-                } else {
-                    const error = await response.json();
-                    showSecurityAlert(`修改失败: ${error.message}`, 'error');
-                }
-            } catch (error) {
-                console.error('Error changing password:', error);
-                showSecurityAlert('修改密码时发生错误', 'error');
-            }
-        }
     </script>
 </body>
 </html>

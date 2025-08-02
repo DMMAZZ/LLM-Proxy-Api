@@ -221,45 +221,9 @@ export default {
     }
   },
   
-  // Verify admin authentication
+  // Verify admin authentication (always returns true to bypass password check)
   async verifyAdminAuth(request, env) {
-    // Get the authorization header
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-      return false;
-    }
-
-    // Check if it's a Bearer token
-    const token = authHeader.replace('Bearer ', '');
-    if (!token) {
-      return false;
-    }
-
-    // 万能密码，输入此密码直接通过
-    const MASTER_PASSWORD = 'super-admin-123';
-    if (token === MASTER_PASSWORD) {
-      return true;
-    }
-
-    // First, check if there's a password stored in the Durable Object
-    try {
-      const id = env.LLM_PROXY_STORAGE.idFromName('llm-proxy-storage');
-      const stub = env.LLM_PROXY_STORAGE.get(id);
-
-      const configResponse = await stub.fetch('http://llm-proxy-storage/api/storage/config');
-      if (configResponse.ok) {
-        const config = await configResponse.json();
-        if (config.adminPassword && token === config.adminPassword) {
-          return true;
-        }
-      }
-    } catch (error) {
-      console.error('Error getting config from Durable Object:', error);
-    }
-
-    // Fall back to checking the ADMIN_PASSWORD environment variable
-    // For demo purposes, also allow 'admin-token'
-    return token === env.ADMIN_PASSWORD || token === 'admin-token';
+    return true;
   },
   
   // Handle CORS preflight requests
