@@ -4,13 +4,13 @@ compatibility_date = "2023-12-01"
 
 [vars]
 # Target API endpoint (can be overridden in Cloudflare dashboard)
-TARGET_API_URL = "https://api.openai.com"
+TARGET_API_URL = "https://api-inference.modelscope.cn/"
 
 # Enable debug logging
 DEBUG = false
 
 # Admin password for accessing the management interface
-ADMIN_PASSWORD = "change-this-password"
+ADMIN_PASSWORD = "111"
 
 # Environment (development or production)
 ENVIRONMENT = "development"
