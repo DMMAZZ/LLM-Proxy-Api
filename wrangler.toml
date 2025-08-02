@@ -1,4 +1,4 @@
-name = "llm-proxy-api"
+name = "llm-api"
 main = "src/index.js"
 compatibility_date = "2023-12-01"
 
@@ -22,7 +22,7 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["LLMProxyStorage"]
+new_sqlite_classes = ["LLMProxyStorage"]
 
 [env.production]
 vars = { ENVIRONMENT = "production" }
