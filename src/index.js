@@ -2,13 +2,19 @@
  * Cloudflare Worker to proxy LLM API requests following OpenAI's API specification
  */
 
-// Import the Durable Object class
-import { LLMProxyStorage } from './storage.js';
 // Import the admin HTML content as a raw string (bundler will inline it)
 import adminHtml from './admin.html';
 
-// Export the Durable Object class
-export { LLMProxyStorage };
+// In-memory storage for configuration, logs, and statistics
+const memoryStorage = {
+  config: {},
+  logs: [],
+  stats: {
+    totalRequests: 0,
+    successfulRequests: 0,
+    totalDuration: 0
+  }
+};
 
 // Main handler for all incoming requests
 export default {
@@ -26,11 +32,6 @@ export default {
       const url = new URL(request.url);
       const pathname = url.pathname;
       
-      // Handle requests to the Durable Object
-      if (pathname.startsWith('/api/storage')) {
-        // Route to the Durable Object
-        return await this.handleStorageRequest(request, env, ctx);
-      }
       
       // Handle admin interface requests
       if (pathname === '/admin' || pathname === '/admin/') {
@@ -104,22 +105,6 @@ export default {
     }
   },
   
-  // Handle requests to the Durable Object
-  async handleStorageRequest(request, env, ctx) {
-    // Get the Durable Object stub
-    const id = env.LLM_PROXY_STORAGE.idFromName('llm-proxy-storage');
-    const stub = env.LLM_PROXY_STORAGE.get(id);
-    
-    // Rewrite the URL to remove the /api/storage prefix
-    const url = new URL(request.url);
-    url.pathname = url.pathname.replace('/api/storage', '');
-    
-    // Create a new request with the rewritten URL
-    const newRequest = new Request(url.toString(), request);
-    
-    // Forward the request to the Durable Object
-    return await stub.fetch(newRequest);
-  },
   
   // Serve the admin interface
   async serveAdminInterface(request, env, ctx) {
@@ -141,6 +126,137 @@ export default {
     return adminHtml;
   },
   
+  // Handle config requests
+  async handleConfig(request, env, ctx) {
+    const method = request.method;
+    
+    switch (method) {
+      case 'GET':
+        return new Response(JSON.stringify(memoryStorage.config), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      case 'POST':
+        try {
+          const data = await request.json();
+          
+          // Validate input
+          if (data.targetApiUrl && typeof data.targetApiUrl !== 'string') {
+            return new Response(JSON.stringify({ error: 'Invalid targetApiUrl' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          
+          if (data.adminPassword && typeof data.adminPassword !== 'string') {
+            return new Response(JSON.stringify({ error: 'Invalid adminPassword' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          
+          // Update config
+          memoryStorage.config = {
+            ...memoryStorage.config,
+            ...data,
+            updatedAt: new Date().toISOString()
+          };
+          
+          return new Response(JSON.stringify(memoryStorage.config), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      default:
+        return new Response('Method not allowed', { status: 405 });
+    }
+  },
+  
+  // Handle logs requests
+  async handleLogs(request, env, ctx) {
+    const method = request.method;
+    const url = new URL(request.url);
+    
+    switch (method) {
+      case 'GET':
+        const limit = parseInt(url.searchParams.get('limit')) || 50;
+        const limitedLogs = memoryStorage.logs.slice(-limit);
+        return new Response(JSON.stringify(limitedLogs), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      case 'POST':
+        try {
+          const logData = await request.json();
+          
+          // Validate input
+          if (!logData.endpoint || !logData.timestamp) {
+            return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          
+          // Add new log entry
+          const newLog = {
+            id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+            ...logData,
+            timestamp: new Date().toISOString()
+          };
+          
+          memoryStorage.logs.push(newLog);
+          
+          // Keep only the last 1000 logs to prevent storage from growing too large
+          if (memoryStorage.logs.length > 1000) {
+            memoryStorage.logs.splice(0, memoryStorage.logs.length - 1000);
+          }
+          
+          return new Response(JSON.stringify(newLog), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      case 'DELETE':
+        memoryStorage.logs = [];
+        return new Response(JSON.stringify({ message: 'Logs cleared' }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      default:
+        return new Response('Method not allowed', { status: 405 });
+    }
+  },
+  
+  // Handle stats requests
+  async handleStats(request, env, ctx) {
+    if (request.method === 'GET') {
+      // Calculate statistics
+      const totalRequests = memoryStorage.stats.totalRequests;
+      const successfulRequests = memoryStorage.stats.successfulRequests;
+      const successRate = totalRequests > 0 ? Math.round((successfulRequests / totalRequests) * 100) : 0;
+      const avgResponseTime = totalRequests > 0 ? Math.round(memoryStorage.stats.totalDuration / totalRequests) : 0;
+      
+      const stats = {
+        totalRequests,
+        successRate,
+        avgResponseTime,
+        currentTarget: memoryStorage.config.targetApiUrl || null,
+        lastUpdated: memoryStorage.config.updatedAt || null
+      };
+      
+      return new Response(JSON.stringify(stats), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } else {
+      return new Response('Method not allowed', { status: 405 });
+    }
+  },
+  
   // Handle admin API requests
   async handleAdminApi(request, env, ctx) {
     const url = new URL(request.url);
@@ -151,18 +267,25 @@ export default {
       return await this.handleTestConnection(request, env, ctx);
     }
     
-    // Get the Durable Object stub
-    const id = env.LLM_PROXY_STORAGE.idFromName('llm-proxy-storage');
-    const stub = env.LLM_PROXY_STORAGE.get(id);
+    // Handle config endpoint
+    if (pathname === '/config') {
+      return await this.handleConfig(request, env, ctx);
+    }
     
-    // Rewrite the URL to match the Durable Object API
-    url.pathname = `/api/storage${pathname}`;
+    // Handle logs endpoint
+    if (pathname.startsWith('/logs')) {
+      return await this.handleLogs(request, env, ctx);
+    }
     
-    // Create a new request with the rewritten URL
-    const newRequest = new Request(url.toString(), request);
+    // Handle stats endpoint
+    if (pathname === '/stats') {
+      return await this.handleStats(request, env, ctx);
+    }
     
-    // Forward the request to the Durable Object
-    return await stub.fetch(newRequest);
+    return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
   },
   
   // Handle test connection request
@@ -386,20 +509,9 @@ export default {
       return targetApiUrlHeader.replace(/\/$/, '');
     }
     
-    // Check if target API URL is stored in Durable Object
-    try {
-      const id = env.LLM_PROXY_STORAGE.idFromName('llm-proxy-storage');
-      const stub = env.LLM_PROXY_STORAGE.get(id);
-      
-      const configResponse = await stub.fetch('http://llm-proxy-storage/api/storage/config');
-      if (configResponse.ok) {
-        const config = await configResponse.json();
-        if (config.targetApiUrl) {
-          return config.targetApiUrl.replace(/\/$/, '');
-        }
-      }
-    } catch (error) {
-      console.error('Error getting config from Durable Object:', error);
+    // Check if target API URL is stored in memory
+    if (memoryStorage.config.targetApiUrl) {
+      return memoryStorage.config.targetApiUrl.replace(/\/$/, '');
     }
     
     // Fall back to environment variables
@@ -492,19 +604,29 @@ export default {
     }
   },
   
-  // Log request to Durable Object
+  // Log request to memory storage
   async logRequest(request, env, logData) {
     try {
-      // Get the Durable Object stub
-      const id = env.LLM_PROXY_STORAGE.idFromName('llm-proxy-storage');
-      const stub = env.LLM_PROXY_STORAGE.get(id);
+      // Add log data to memory storage
+      const newLog = {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+        ...logData,
+        timestamp: new Date().toISOString()
+      };
       
-      // Send log data to the Durable Object
-      await stub.fetch(new Request('http://llm-proxy-storage/api/storage/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(logData)
-      }));
+      memoryStorage.logs.push(newLog);
+      
+      // Keep only the last 1000 logs to prevent storage from growing too large
+      if (memoryStorage.logs.length > 1000) {
+        memoryStorage.logs.splice(0, memoryStorage.logs.length - 1000);
+      }
+      
+      // Update statistics
+      memoryStorage.stats.totalRequests++;
+      if (logData.status >= 200 && logData.status < 300) {
+        memoryStorage.stats.successfulRequests++;
+      }
+      memoryStorage.stats.totalDuration += logData.duration || 0;
     } catch (error) {
       console.error('Error logging request:', error);
     }
