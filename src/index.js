@@ -137,21 +137,17 @@ export default {
   async getAdminHtml(env) {
     try {
       // Use the environment variable to locate the admin.html file
-      const adminHtmlPath = env.ADMIN_HTML_PATH || 'src/admin.html';
+      const adminHtmlPath = 'src/admin.html';
 
-      // Fetch the admin.html file content
-      const response = await fetch(adminHtmlPath);
-      if (response.ok) {
-        return await response.text();
-      } else {
-        console.error('Failed to fetch admin.html:', response.statusText);
-      }
+      // Read the admin.html file content directly
+      const fs = require('fs');
+      const html = fs.readFileSync(adminHtmlPath, 'utf-8');
+      return html;
     } catch (error) {
-      console.error('Error fetching admin.html:', error);
-    }
+      console.error('Error reading admin.html:', error);
 
-    // Fallback: Return a simple admin interface if we can't load the file
-    return `<!DOCTYPE html>
+      // Fallback: Return a simple admin interface if we can't load the file
+      return `<!DOCTYPE html>
 <html>
 <head>
     <title>LLM API Proxy Admin</title>
@@ -166,6 +162,7 @@ export default {
     </div>
 </body>
 </html>`;
+    }
   },
   
   // Handle admin API requests
