@@ -122,7 +122,7 @@ export default {
   // Serve the admin interface
   async serveAdminInterface(request, env, ctx) {
     // Serve the admin HTML file
-    const html = await this.getAdminHtml();
+    const html = await this.getAdminHtml(env);
     return new Response(html, {
       headers: { 
         'Content-Type': 'text/html; charset=utf-8',
@@ -134,11 +134,38 @@ export default {
   },
   
   // Get admin HTML content
-  async getAdminHtml() {
-    // In a production environment, you might want to serve static files from a CDN
-    // For this example, we'll return the HTML content directly
-    const response = await fetch(new URL('admin.html', import.meta.url));
-    return await response.text();
+  async getAdminHtml(env) {
+    try {
+      // Use the environment variable to locate the admin.html file
+      const adminHtmlPath = env.ADMIN_HTML_PATH || 'src/admin.html';
+
+      // Fetch the admin.html file content
+      const response = await fetch(adminHtmlPath);
+      if (response.ok) {
+        return await response.text();
+      } else {
+        console.error('Failed to fetch admin.html:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching admin.html:', error);
+    }
+
+    // Fallback: Return a simple admin interface if we can't load the file
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <title>LLM API Proxy Admin</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div id="app">
+        <h1>LLM API Proxy Admin</h1>
+        <p>Admin interface is available but the admin.html file could not be loaded.</p>
+        <p>Please check the worker configuration or serve the admin interface from a CDN.</p>
+    </div>
+</body>
+</html>`;
   },
   
   // Handle admin API requests
